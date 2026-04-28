@@ -1,0 +1,42 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_20-15f3766f333a38dc17a0f9715441a6ef460f1ea2",
+  "solcVersion": "0.8.20",
+  "solcLongVersion": "0.8.20+commit.a1b79de6",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/PaymentTracking.sol": "project/contracts/PaymentTracking.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/PaymentTracking.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ncontract PaymentTracking {\n    enum InvoiceStatus { Pending, Paid, Overdue, Cancelled }\n\n    struct Invoice {\n        address issuer;\n        address recipient;\n        string description;\n        uint256 amount;\n        uint256 paidAmount;\n        InvoiceStatus status;\n        uint256 dueDate;\n        uint256 createdAt;\n        uint256 paidAt;\n    }\n\n    mapping(string => Invoice) public invoices;\n    string[] public invoiceIds;\n\n    // Events\n    event InvoiceCreated(string indexed id, address indexed issuer, address indexed recipient, uint256 amount, uint256 dueDate);\n    event InvoicePaid(string indexed id, address indexed payer, uint256 paidAmount, uint256 paidAt);\n    event InvoiceOverdue(string indexed id, address indexed issuer);\n    event InvoiceCancelled(string indexed id, address indexed issuer);\n\n    function createInvoice(\n        string memory id,\n        address issuer,\n        address recipient,\n        string memory description,\n        uint256 amount,\n        uint256 dueDate\n    ) public {\n        require(msg.sender == issuer, \"Only issuer can create\");\n        require(bytes(description).length > 0, \"Invalid description\");\n        require(amount > 0, \"Invalid amount\");\n        require(invoices[id].issuer == address(0), \"Invoice ID already exists\");\n\n        invoices[id] = Invoice({\n            issuer: issuer,\n            recipient: recipient,\n            description: description,\n            amount: amount,\n            paidAmount: 0,\n            status: InvoiceStatus.Pending,\n            dueDate: dueDate,\n            createdAt: block.timestamp,\n            paidAt: 0\n        });\n\n        invoiceIds.push(id);\n\n        emit InvoiceCreated(id, issuer, recipient, amount, dueDate);\n    }\n\n    function markPaid(\n        string memory id,\n        address payer,\n        uint256 paidAmount,\n        uint256 paidAt\n    ) public {\n        require(msg.sender == payer, \"Only payer can mark paid\");\n        Invoice storage invoice = invoices[id];\n        require(invoice.issuer != address(0), \"Invoice not found\");\n        require(invoice.status != InvoiceStatus.Paid, \"Already paid\");\n        require(invoice.status != InvoiceStatus.Cancelled, \"Already cancelled\");\n\n        invoice.paidAmount = paidAmount;\n        invoice.status = InvoiceStatus.Paid;\n        invoice.paidAt = paidAt;\n\n        emit InvoicePaid(id, payer, paidAmount, paidAt);\n    }\n\n    function markOverdue(string memory id, address issuer) public {\n        require(msg.sender == issuer, \"Only issuer can mark overdue\");\n        Invoice storage invoice = invoices[id];\n        require(invoice.issuer != address(0), \"Invoice not found\");\n        require(invoice.issuer == issuer, \"Not the issuer\");\n        require(invoice.status == InvoiceStatus.Pending, \"Can only mark pending as overdue\");\n\n        invoice.status = InvoiceStatus.Overdue;\n\n        emit InvoiceOverdue(id, issuer);\n    }\n\n    function cancelInvoice(string memory id, address issuer) public {\n        require(msg.sender == issuer, \"Only issuer can cancel\");\n        Invoice storage invoice = invoices[id];\n        require(invoice.issuer != address(0), \"Invoice not found\");\n        require(invoice.issuer == issuer, \"Not the issuer\");\n        require(invoice.status != InvoiceStatus.Paid, \"Already paid\");\n        require(invoice.status != InvoiceStatus.Cancelled, \"Already cancelled\");\n\n        invoice.status = InvoiceStatus.Cancelled;\n\n        emit InvoiceCancelled(id, issuer);\n    }\n\n    function getInvoice(string memory id) public view returns (Invoice memory) {\n        require(invoices[id].issuer != address(0), \"Invoice not found\");\n        return invoices[id];\n    }\n\n    function listInvoices() public view returns (string[] memory) {\n        return invoiceIds;\n    }\n\n    function getTotalOutstanding() public view returns (uint256) {\n        uint256 total = 0;\n        for (uint256 i = 0; i < invoiceIds.length; i++) {\n            Invoice memory invoice = invoices[invoiceIds[i]];\n            if (invoice.status != InvoiceStatus.Paid && invoice.status != InvoiceStatus.Cancelled) {\n                total += (invoice.amount - invoice.paidAmount);\n            }\n        }\n        return total;\n    }\n}\n"
+      }
+    }
+  }
+}

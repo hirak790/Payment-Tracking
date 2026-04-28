@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LedgerLink — On-Chain Payment Tracking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --ink: #0a0a0a;
+      --ink-mid: #1a1a1a;
+      --ink-soft: #2a2a2a;
+      --paper: #fafaf8;
+      --paper-tint: #f3f2ef;
+      --paper-warm: #eeecea;
+      --accent: #0ea865;
+      --accent-dim: #0a7a4a;
+      --accent-pale: #d6f5e7;
+      --amber: #d97706;
+      --amber-pale: #fef3c7;
+      --red: #dc2626;
+      --red-pale: #fee2e2;
+      --muted: #71716c;
+      --border: rgba(0, 0, 0, 0.1);
+      --border-strong: rgba(0, 0, 0, 0.18);
+      --mono: "DM Mono", monospace;
+      --serif: "Instrument Serif", serif;
+      --sans: "Geist", system-ui, sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--ink);
+      color: var(--paper);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ═══ LANDING ═══ */
+
+    .landing {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Grid texture */
+    .landing::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(14, 168, 101, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(14, 168, 101, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Radial glow */
+    .landing::after {
+      content: "";
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 700px;
+      background: radial-gradient(ellipse, rgba(14, 168, 101, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 3rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .nav-logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-name {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--paper);
+    }
+
+    .nav-name span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 400;
+      transition: color 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-links a:hover {
+      color: var(--paper);
+    }
+
+    .nav-cta {
+      background: var(--accent) !important;
+      color: #fff !important;
+      padding: 0.45rem 1.1rem;
+      border-radius: 6px;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      transition: background 0.2s, transform 0.1s !important;
+    }
+
+    .nav-cta:hover {
+      background: var(--accent-dim) !important;
+      transform: translateY(-1px);
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 7rem 2rem 5rem;
+      gap: 2rem;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(14, 168, 101, 0.1);
+      border: 1px solid rgba(14, 168, 101, 0.3);
+      border-radius: 100px;
+      padding: 0.3rem 0.9rem;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero-pill::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.75);
+      }
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(3.2rem, 8vw, 6.5rem);
+      font-weight: 400;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      color: var(--paper);
+      max-width: 800px;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: rgba(255, 255, 255, 0.5);
+      max-width: 500px;
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: -0.01em;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dim);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(14, 168, 101, 0.25);
+    }
+
+    .btn-primary svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-ghost-light {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.7);
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 0.75rem 1.6rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-ghost-light:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* STATS STRIP */
+    .stats-strip {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .stat-item {
+      flex: 1;
+      max-width: 220px;
+      padding: 1.8rem 1.5rem;
+      text-align: center;
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .stat-item:last-child {
+      border-right: none;
+    }
+
+    .stat-num {
+      font-family: var(--serif);
+      font-size: 2.5rem;
+      font-weight: 400;
+      color: var(--paper);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-num span {
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.4rem;
+      font-family: var(--mono);
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 7rem 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 400;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--paper);
+      max-width: 580px;
+      margin-bottom: 3.5rem;
+    }
+
+    .section-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: #111;
+      padding: 2rem;
+      transition: background 0.2s;
+    }
+
+    .feature-card:hover {
+      background: #141414;
+    }
+
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(14, 168, 101, 0.12);
+      border: 1px solid rgba(14, 168, 101, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    .feature-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--paper);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.6;
+    }
+
+    /* HOW IT WORKS */
+    .how-it-works {
+      padding: 7rem 3rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hiw-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: default;
+      transition: all 0.2s;
+    }
+
+    .step:first-child {
+      padding-top: 0;
+    }
+
+    .step:last-child {
+      border-bottom: none;
+    }
+
+    .step:hover .step-num {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+
+    .step-content h4 {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--paper);
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.01em;
+    }
+
+    .step-content p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.4);
+      line-height: 1.55;
+    }
+
+    /* Mock app preview */
+    .app-preview {
+      background: #0d0d0d;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+    }
+
+    .preview-bar {
+      background: #151515;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot-r {
+      background: #ef4444;
+    }
+
+    .dot-y {
+      background: #f59e0b;
+    }
+
+    .dot-g {
+      background: #22c55e;
+    }
+
+    .preview-url {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.2rem 0.7rem;
+      border-radius: 4px;
+    }
+
+    .preview-body {
+      padding: 1.5rem;
+    }
+
+    .preview-invoice {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .preview-invoice-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .preview-invoice-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .preview-id {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .preview-status {
+      font-size: 11px;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-paid {
+      background: rgba(14, 168, 101, 0.15);
+      color: var(--accent);
+    }
+
+    .status-pending {
+      background: rgba(217, 119, 6, 0.15);
+      color: #d97706;
+    }
+
+    .status-overdue {
+      background: rgba(220, 38, 38, 0.15);
+      color: #ef4444;
+    }
+
+    .preview-amount {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--paper);
+    }
+
+    .preview-desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .preview-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.9rem 1.25rem;
+      background: rgba(14, 168, 101, 0.07);
+      border: 1px solid rgba(14, 168, 101, 0.15);
+      border-radius: 10px;
+    }
+
+    .preview-total-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--mono);
+    }
+
+    .preview-total-amount {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    /* CTA SECTION */
+    .cta-section {
+      padding: 8rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(14, 168, 101, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--paper);
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+
+    .cta-section h2 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .cta-section p {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.45);
+      margin-bottom: 2.5rem;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+    }
+
+    /* CONTRACT BADGE */
+    .contract-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 2rem;
+      position: relative;
+    }
+
+    .contract-badge strong {
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 2rem 3rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    footer a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+    }
+
+    /* ═══ DAPP ═══ */
+
+    .dapp {
+      display: none;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .dapp.active {
+      display: block;
+    }
+
+    .landing.hidden {
+      display: none;
+    }
+
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      height: 56px;
+      gap: 1.5rem;
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .topbar-logo-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .topbar-name {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--ink);
+    }
+
+    .topbar-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .topbar-tabs {
+      display: flex;
+      gap: 0;
+      height: 100%;
+    }
+
+    .topbar-tab {
+      display: flex;
+      align-items: center;
+      padding: 0 1.1rem;
+      height: 100%;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      border-top: 2px solid transparent;
+      transition: all 0.15s;
+      background: none;
+      border-left: none;
+      border-right: none;
+      font-family: var(--sans);
+    }
+
+    .topbar-tab:hover {
+      color: var(--ink);
+    }
+
+    .topbar-tab.active {
+      color: var(--ink);
+      border-bottom-color: var(--accent);
+    }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .wallet-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0.35rem 0.9rem;
+      border-radius: 100px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: var(--mono);
+    }
+
+    .wallet-pill.disconnected {
+      background: var(--ink);
+      color: var(--paper);
+      transition: background 0.2s;
+    }
+
+    .wallet-pill.disconnected:hover {
+      background: #222;
+    }
+
+    .wallet-pill.connected {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .wallet-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .wallet-dot.on {
+      background: var(--accent);
+    }
+
+    .wallet-dot.off {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Main layout */
+    .dapp-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: calc(100vh - 56px);
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-family: var(--mono);
+      padding: 0.75rem 0.75rem 0.35rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--sans);
+    }
+
+    .sidebar-item svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.6;
+      flex-shrink: 0;
+    }
+
+    .sidebar-item:hover {
+      background: var(--paper-tint);
+      color: var(--ink);
+    }
+
+    .sidebar-item.active {
+      background: var(--accent-pale);
+      color: var(--accent-dim);
+    }
+
+    .sidebar-item.active svg {
+      stroke: var(--accent-dim);
+    }
+
+    /* Content panels */
+    .content {
+      padding: 2rem 2.5rem;
+      background: var(--paper-tint);
+      overflow-y: auto;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-header h2 {
+      font-family: var(--serif);
+      font-size: 1.9rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .page-header p {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* Form card */
+    .form-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-group.span2 {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      letter-spacing: 0.02em;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      font-size: 13.5px;
+      font-family: var(--sans);
+      background: var(--paper);
+      color: var(--ink);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(14, 168, 101, 0.1);
+      background: #fff;
+    }
+
+    .form-group input::placeholder {
+      color: rgba(0, 0, 0, 0.25);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .field-hint {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .amount-wrap {
+      position: relative;
+    }
+
+    .amount-wrap::before {
+      content: "ƒ";
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .amount-wrap input {
+      padding-left: 1.65rem;
+      font-family: var(--mono);
+      font-weight: 500;
+    }
+
+    /* Action row */
+    .action-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0.6rem 1.25rem;
+      border-radius: 7px;
+      font-size: 13.5px;
+      font-weight: 600;
+      font-family: var(--sans);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .btn-green {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-green:hover {
+      background: var(--accent-dim);
+      border-color: var(--accent-dim);
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: #fff;
+      border-color: var(--amber);
+    }
+
+    .btn-amber:hover {
+      background: #b45309;
+      border-color: #b45309;
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--border-strong);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--ink);
+      background: var(--paper-tint);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border-color: rgba(220, 38, 38, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: var(--red-pale);
+    }
+
+    .btn-danger.confirming {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+      animation: jitter 0.3s ease;
+    }
+
+    @keyframes jitter {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-3px);
+      }
+
+      75% {
+        transform: translateX(3px);
+      }
+    }
+
+    .btn.loading {
+      pointer-events: none;
+      position: relative;
+      color: transparent;
+    }
+
+    .btn.loading::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      top: 50%;
+      left: 50%;
+      margin: -7px 0 0 -7px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .btn-outline.loading::after {
+      border-top-color: var(--ink);
+    }
+
+    .btn-danger.loading::after {
+      border-top-color: var(--red);
+    }
+
+    /* Log / Output */
+    .log-card {
+      background: var(--ink-mid);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1.1rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .log-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .log-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .log-status-dot.success {
+      background: var(--accent);
+    }
+
+    .log-status-dot.error {
+      background: #ef4444;
+    }
+
+    .log-clear {
+      background: none;
+      border: none;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      transition: color 0.15s;
+    }
+
+    .log-clear:hover {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .log-body {
+      padding: 1rem 1.1rem;
+      min-height: 100px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .log-body pre {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: #4ade80;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.7;
+    }
+
+    .log-body.error pre {
+      color: #f87171;
+    }
+
+    .log-body.idle pre {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .log-empty {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.2);
+      font-style: italic;
+    }
+
+    /* Query cards */
+    .queries-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .query-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .query-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .query-card-icon.green {
+      background: var(--accent-pale);
+    }
+
+    .query-card-icon.amber {
+      background: var(--amber-pale);
+    }
+
+    .query-card-icon.ink {
+      background: var(--paper-warm);
+    }
+
+    .query-card-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .query-card-icon.green svg {
+      stroke: var(--accent-dim);
+    }
+
+    .query-card-icon.amber svg {
+      stroke: var(--amber);
+    }
+
+    .query-card-icon.ink svg {
+      stroke: var(--ink-soft);
+    }
+
+    .query-card h4 {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .query-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    /* Invoice ID field inline */
+    .id-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+
+    /* Network banner */
+    .network-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(14, 168, 101, 0.07);
+      border: 1px solid rgba(14, 168, 101, 0.18);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 12.5px;
+      color: var(--accent-dim);
+      font-family: var(--mono);
+      margin-bottom: 1.5rem;
+    }
+
+    .network-banner svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hiw-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .app-preview {
+        display: none;
+      }
+
+      .dapp-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      nav {
+        padding: 1rem 1.5rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .queries-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-strip {
+        flex-wrap: wrap;
+      }
+
+      .stat-item {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+
+      .hero h1 {
+        font-size: 2.8rem;
+      }
+
+      .features,
+      .how-it-works,
+      .cta-section {
+        padding: 4rem 1.5rem;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════ LANDING PAGE ════════════ -->
+  <div class="landing" id="landing">
+
+    <nav>
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-mark">LL</div>
+        <span class="nav-name">Ledger<span>Link</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="https://nero.org/developers" target="_blank">Docs</a></li>
+        <li><a href="#" class="nav-cta" onclick="openDapp(event)">Open App →</a></li>
+      </ul>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-pill">Live on Nero Testnet</div>
+      <h1>Invoice tracking,<br><em>on-chain</em></h1>
+      <p class="hero-sub">
+        Create, manage, and settle invoices directly on Nero's blockchain.
+        Immutable records. Instant settlement. No middlemen.
+      </p>
+      <div class="hero-actions">
+        <a href="#" class="btn-primary" onclick="openDapp(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          Launch App
+        </a>
+        <a href="#how-it-works" class="btn-ghost-light">See how it works</a>
+      </div>
+    </section>
+
+    <div class="stats-strip">
+      <div class="stat-item">
+        <div class="stat-num">~<span>3</span>s</div>
+        <div class="stat-label">Settlement time</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span>$0</span>.01</div>
+        <div class="stat-label">Per transaction</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span>100</span>%</div>
+        <div class="stat-label">On-chain records</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span>4</span></div>
+        <div class="stat-label">Invoice states</div>
+      </div>
+    </div>
+
+    <section class="features" id="features">
+      <div class="section-eyebrow">What you get</div>
+      <h2 class="section-title">Everything you need to manage <em>payments</em></h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <h3>Invoice Creation</h3>
+          <p>Issue invoices with immutable on-chain records. Set amount, recipient, due date and description — all
+            stored in the EVM contract.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <polyline points="20 12 20 22 4 22 4 12" />
+              <rect x="2" y="7" width="20" height="5" />
+              <path d="M12 22V7" />
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+            </svg>
+          </div>
+          <h3>Payment Marking</h3>
+          <p>Record partial or full payments with timestamps. The contract tracks paid amounts separately from invoice
+            totals for complete audit trails.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <h3>Overdue Tracking</h3>
+          <p>Issuers can flag invoices as overdue when due dates pass — keeping all counterparties informed with a
+            single blockchain state change.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </div>
+          <h3>Invoice Cancellation</h3>
+          <p>Cancel unpaid invoices with issuer authority. Once cancelled, the state is immutable — protecting both
+            parties from disputes.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <h3>Outstanding Balance</h3>
+          <p>Query total outstanding across all active invoices in one call. Excludes paid and cancelled invoices
+            automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h3>Issuer Auth</h3>
+          <p>All write operations require cryptographic signatures. Cancellations and overdue flags are gated to invoice
+            issuers only — no admin keys.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+      <div class="hiw-inner">
+        <div>
+          <div class="section-eyebrow">Workflow</div>
+          <h2 class="section-title">From invoice to <em>settlement</em></h2>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>Connect your MetaMask wallet</h4>
+                <p>Authenticate with your Nero keypair using the MetaMask browser extension. No email or password
+                  required.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>Create an invoice</h4>
+                <p>Fill in the invoice ID, recipient address, amount in Wei, and due date. The transaction is signed
+                  and submitted on-chain.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>Track & manage status</h4>
+                <p>Mark invoices as paid when settlement occurs, flag overdue payments, or cancel if needed. All actions
+                  are authenticated.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <h4>Query your ledger</h4>
+                <p>Look up individual invoices or view total outstanding balances. All data is read directly from
+                  contract storage.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="app-preview">
+          <div class="preview-bar">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+            <div class="preview-url">ledgerlink.app/invoices</div>
+          </div>
+          <div class="preview-body">
+            <div class="preview-invoice">
+              <div class="preview-invoice-row">
+                <span class="preview-id">INV-2024-001</span>
+                <span class="preview-status status-paid">Paid</span>
+              </div>
+              <div class="preview-invoice-row">
+                <span class="preview-desc">Web development services</span>
+                <span class="preview-amount">50,000,000 ƒ</span>
+              </div>
+            </div>
+            <div class="preview-invoice">
+              <div class="preview-invoice-row">
+                <span class="preview-id">INV-2024-002</span>
+                <span class="preview-status status-pending">Pending</span>
+              </div>
+              <div class="preview-invoice-row">
+                <span class="preview-desc">Design system audit</span>
+                <span class="preview-amount">30,000,000 ƒ</span>
+              </div>
+            </div>
+            <div class="preview-invoice">
+              <div class="preview-invoice-row">
+                <span class="preview-id">INV-2024-003</span>
+                <span class="preview-status status-overdue">Overdue</span>
+              </div>
+              <div class="preview-invoice-row">
+                <span class="preview-desc">API integration</span>
+                <span class="preview-amount">20,000,000 ƒ</span>
+              </div>
+            </div>
+            <div class="preview-total">
+              <span class="preview-total-label">Outstanding</span>
+              <span class="preview-total-amount">50,000,000 ƒ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <h2>Start tracking<br><em>invoices</em> today</h2>
+      <p>Connect your MetaMask wallet and issue your first on-chain invoice in under a minute.</p>
+      <a href="#" class="btn-primary" style="font-size: 15px; padding: 0.9rem 2rem;" onclick="openDapp(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+        Open LedgerLink
+      </a>
+      <div class="contract-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          style="width: 12px; height: 12px;">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+        Contract: <strong>CC3I2W…H3NBX</strong> · Nero Testnet
+      </div>
+    </section>
+
+    <footer>
+      <div>© 2025 LedgerLink · Built on <a href="https://nero.org" target="_blank">Nero EVM</a></div>
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="#">GitHub</a>
+        <a href="#">Testnet Explorer</a>
+        <a href="#">Documentation</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ════════════ DAPP ════════════ -->
+  <div class="dapp" id="dapp">
+    <div id="root"></div>
+  </div>
+
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    function openDapp(e) {
+      if(e) e.preventDefault();
+      document.getElementById('landing').classList.add('hidden');
+      document.getElementById('dapp').classList.add('active');
+    }
+
+    function closeDapp(e) {
+      if(e) e.preventDefault();
+      document.getElementById('dapp').classList.remove('active');
+      document.getElementById('landing').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
